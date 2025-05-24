@@ -1,0 +1,289 @@
+// astroinsight/main.wasp
+
+app AstroInsight {
+  wasp: {
+    version: "^0.13.0" // Specify your Wasp version
+  },
+  title: "AstroInsight - Personalized Astrological Insights",
+  client: {
+    rootComponent: import App from "@client/App.jsx"
+  },
+  db: {
+    system: PostgreSQL,
+    // TODO: Add `prismaClientOptions: ["log: ['query', 'info', 'warn', 'error']"]` for verbose logging in development
+  },
+  auth: {
+    userEntity: User,
+    methods: {
+      google: {},
+      email: {}
+    },
+    onAuthFailedRedirectTo: "/login",
+    onAuthSucceededRedirectTo: "/dashboard"
+  },
+  dependencies: [
+    // Frontend
+    ("@chakra-ui/react", "^2.8.2"),
+    ("@chakra-ui/icons", "^2.1.1"),
+    ("@emotion/react", "^11.11.4"),
+    ("@emotion/styled", "^11.11.5"),
+    ("framer-motion", "^11.0.8"), // Chakra UI peer dependency
+    ("recharts", "^2.12.2"),
+    ("react-hook-form", "^7.51.0"),
+    ("react-icons", "^5.0.1"),
+    ("date-fns", "^3.3.1"),
+    ("date-fns-tz", "^3.1.3"),
+    // Backend
+    ("@anthropic-ai/sdk", "^0.20.1"),
+    ("stripe", "^14.20.0"),
+    ("sweph-js", "^2.10.0-2"), // Swiss Ephemeris JS wrapper
+    ("@googlemaps/google-maps-services-js", "^3.3.42"),
+    ("@sendgrid/mail", "^8.1.1"),
+    ("winston", "^3.11.0"),
+    ("zod", "^3.22.4") // For server-side validation, Wasp also uses it
+  ],
+  // Email sending setup (e.g., for password reset, email verification)
+  emailSender: {
+    provider: SendGrid,
+    defaultFrom: {
+      email: "noreply@astroinsight.com", // Replace with your domain
+      name: "AstroInsight Team"
+    }
+  }
+}
+
+// ENTITIES (Database Schema)
+
+entity User {
+  id             Int          @id @default(autoincrement())
+  email          String?      @unique // Optional if using only Google OAuth, but good for email/password
+  username       String?      @unique // Optional, can be derived from email
+  hashedPassword String?      // For email/password auth
+  isAdmin        Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  // Subscription fields
+  subscriptionStatus String?   // e.g., "active", "canceled", "past_due", "trialing"
+  stripeCustomerId String?      @unique // Stripe Customer ID
+  stripeSubscriptionId String?  @unique // Stripe Subscription ID
+  planId         String?      // e.g., "basic", "premium", "free_trial"
+  subscriptionEndsAt DateTime? // For managing subscription end or trial end
+  credits        Int          @default(3) // e.g., for AI interactions on free/basic plan
+
+  // Relationships
+  birthCharts    BirthChart[]
+  conversations  Conversation[]
+  apiLogs        ApiLog[]
+  googleId       String?      @unique // Wasp Google Auth automatically adds this if not defined
+
+  // Wasp specific fields for email auth (if not already defined)
+  // isEmailVerified Boolean @default(false)
+  // emailVerificationSentAt DateTime?
+  // passwordResetSentAt DateTime?
+}
+
+entity BirthChart {
+  id            Int      @id @default(autoincrement())
+  name          String   // Person's name for the chart
+  birthDate     DateTime // Store as UTC, handle timezone on display
+  birthTime     String   // HH:MM format, store as string, combine with date for calculations
+  birthLocation String   // City, Country
+  latitude      Float
+  longitude     Float
+  timezone      String   // IANA timezone string, e.g., "America/New_York"
+  gender        String?  // Optional: Male, Female, Other
+
+  // Astrological data
+  planetaryPositionsJson String? @db.Text // JSON string of detailed chart data from Swiss Ephemeris
+  houseSystem          String   @default("Placidus")
+  ayanamsa             String   @default("Lahiri") // For Vedic charts
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id])
+  userId        Int
+  conversations Conversation[]
+}
+
+entity Conversation {
+  id          Int       @id @default(autoincrement())
+  title       String    // e.g., "Initial Insight for John Doe's Chart"
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  birthChart  BirthChart? @relation(fields: [birthChartId], references: [id])
+  birthChartId Int?     // Optional: a conversation might not be tied to a specific chart initially
+
+  messages    Message[]
+}
+
+entity Message {
+  id             Int      @id @default(autoincrement())
+  content        String   @db.Text
+  role           String   // "user" or "assistant"
+  tokenCount     Int?     // For Claude API usage tracking
+  modelUsed      String?  // e.g., "claude-3-haiku", "claude-3-5-sonnet"
+  cost           Float?   // Cost of this message (if assistant)
+  createdAt      DateTime @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId Int
+}
+
+entity ApiLog {
+  id            Int      @id @default(autoincrement())
+  userId        Int?     // Optional: some API calls might not be user-specific (e.g. system tasks)
+  user          User?    @relation(fields: [userId], references: [id])
+  apiService    String   // e.g., "Claude", "Stripe", "GoogleMaps"
+  endpoint      String
+  requestData   String?  @db.Text
+  responseData  String?  @db.Text
+  tokenCountIn  Int?
+  tokenCountOut Int?
+  cost          Float?
+  isSuccess     Boolean
+  errorMessage  String?  @db.Text
+  timestamp     DateTime @default(now())
+}
+
+// ROUTES & PAGES
+
+// Public pages
+route RootRoute { path: "/", to: HomePage }
+page HomePage {
+  component: import { HomePage } from "@client/pages/HomePage.jsx"
+}
+
+route LoginRoute { path: "/login", to: LoginPage }
+page LoginPage {
+  component: import { LoginPage } from "@client/pages/LoginPage.jsx"
+}
+
+route SignupRoute { path: "/signup", to: SignupPage }
+page SignupPage {
+  component: import { SignupPage } from "@client/pages/SignupPage.jsx"
+}
+
+route PricingRoute { path: "/pricing", to: PricingPage }
+page PricingPage {
+  component: import { PricingPage } from "@client/pages/PricingPage.jsx"
+}
+
+// Authenticated pages
+route DashboardRoute { path: "/dashboard", to: DashboardPage }
+page DashboardPage {
+  component: import { DashboardPage } from "@client/pages/DashboardPage.jsx",
+  authRequired: true
+}
+
+route AccountRoute { path: "/account", to: AccountPage }
+page AccountPage {
+  component: import { AccountPage } from "@client/pages/AccountPage.jsx",
+  authRequired: true
+}
+
+// API ROUTES (for webhooks, etc.)
+api stripeWebhook {
+  fn: import { stripeWebhookHandler } from "@server/integrations/stripe.js",
+  http: {
+    method: POST,
+    path: "/webhooks/stripe"
+  }
+}
+
+// ACTIONS (Server-side functions callable from client)
+
+// Auth Actions (Wasp provides some, e.g., logout, but custom ones might be needed)
+action updateUserProfile {
+  fn: import { updateUserProfile } from "@server/actions/user.js",
+  entities: [User]
+}
+action deleteUserAccount {
+  fn: import { deleteUserAccount } from "@server/actions/user.js",
+  entities: [User]
+}
+
+// Astrology Actions
+action createBirthChart {
+  fn: import { createBirthChart } from "@server/actions/astrology.js",
+  entities: [User, BirthChart, ApiLog]
+}
+action getAstrologyReport {
+  fn: import { getAstrologyReport } from "@server/actions/astrology.js",
+  entities: [User, BirthChart, Conversation, Message, ApiLog]
+}
+action askAstrologyQuestion {
+  fn: import { askAstrologyQuestion } from "@server/actions/astrology.js",
+  entities: [User, BirthChart, Conversation, Message, ApiLog]
+}
+action deleteBirthChart {
+  fn: import { deleteBirthChart } from "@server/actions/astrology.js",
+  entities: [BirthChart]
+}
+
+// Payment Actions
+action createCheckoutSession {
+  fn: import { createCheckoutSession } from "@server/actions/payment.js",
+  entities: [User]
+}
+action manageSubscription { // To portal
+  fn: import { manageSubscription } from "@server/actions/payment.js",
+  entities: [User]
+}
+action cancelSubscription {
+  fn: import { cancelSubscription } from "@server/actions/payment.js",
+  entities: [User] // Updates user entity based on Stripe webhook later
+}
+
+// QUERIES (Server-side functions for fetching data)
+
+// User Queries
+query getCurrentUser {
+  fn: import { getCurrentUser } from "@server/queries/user.js",
+  entities: [User]
+}
+query getUserUsage {
+  fn: import { getUserUsage } from "@server/queries/user.js",
+  entities: [User, ApiLog]
+}
+
+// Astrology Queries
+query getUserBirthCharts {
+  fn: import { getUserBirthCharts } from "@server/queries/astrology.js",
+  entities: [User, BirthChart]
+}
+query getBirthChartDetails {
+  fn: import { getBirthChartDetails } from "@server/queries/astrology.js",
+  entities: [BirthChart]
+}
+query getConversationMessages {
+  fn: import { getConversationMessages } from "@server/queries/astrology.js",
+  entities: [Conversation, Message]
+}
+query getUserConversations {
+  fn: import { getUserConversations } from "@server/queries/astrology.js",
+  entities: [User, Conversation]
+}
+
+// JOBS (Background tasks)
+job monthlyHoroscopeGenerator {
+  fn: import { generateMonthlyHoroscopes } from "@server/jobs/monthlyHoroscope.js",
+  schedule: { cron: "0 0 1 * *" }, // Run at midnight on the 1st of every month
+  entities: [User, BirthChart, ApiLog, Message, Conversation] // Entities it might interact with
+}
+
+// SERVER SETUP
+server: {
+  setupFn: import { setupServer } from "@server/serverSetup.js",
+  middleware: {
+    // Global middleware (applied to all HTTP requests, including API routes and actions)
+    // Note: Wasp applies some default middleware like CORS, body parsing.
+    // We can add custom ones.
+    // Example: A custom global logger or rate limiter if not handled per-route/action
+    // Global rate limiting might be too broad; better to apply to specific actions/API routes.
+  }
+}

@@ -1,0 +1,43 @@
+# astroinsight/.gitignore
+
+# Node dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Wasp specific
+.wasp/
+!/.wasp/out/ # Do not ignore the out directory, it's where build artifacts are placed for inspection by user.
+!/.wasp/out/**
+.DS_Store
+*.db
+*.sqlite3
+
+# Environment variables
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# IDE and editor specific
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Production build folder (if you build locally for other purposes)
+# build/ # Wasp places its main build in .wasp/build
+
+# Test coverage
+coverage/
