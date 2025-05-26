@@ -1,0 +1,40 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "nixpacksConfig": {
+      "pnpm": "latest",
+      "node": "18",
+      "phases": {
+        "setup": {
+          "nixPkgs": ["...", "postgresql"],
+          "cmds": ["pnpm install --frozen-lockfile"]
+        },
+        "build": {
+          "cmds": ["pnpm run build"]
+        }
+      },
+      "start": {
+        "cmd": "pnpm run start:prod"
+      }
+    },
+    "watchPatterns": [
+      "/src/**",
+      "/public/**",
+      "*.js",
+      "*.json",
+      "*.ts",
+      "*.tsx",
+      "*.env",
+      "*.env.*",
+      "Dockerfile"
+    ]
+  },
+  "deploy": {
+    "startCommand": "node .wasp/build/server/src/main.js",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10,
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 100
+  }
+}
