@@ -11,7 +11,7 @@
         "build:prod": "wasp build"
     },
     "devDependencies": {
-        "wasp-cli": "^0.13.0"
+        "wasp": "0.13.0"
     },
     "engines": {
         "node": ">=18.0.0"
