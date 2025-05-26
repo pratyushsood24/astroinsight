@@ -1,0 +1,9 @@
+// astroinsight/package.json (partial)
+{
+  "name": "AstroInsight",
+  // ... other fields ...
+  "engines": {
+    "node": ">=18.0.0" // Specify a version compatible with your Wasp version
+  }
+  // ...
+}
