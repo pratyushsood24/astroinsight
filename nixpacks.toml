@@ -6,7 +6,7 @@ providers = ["node"]
 
 # Define the build command
 [phases.build]
-cmds = ["npm install -g wasp-cli@<your-wasp-version> && wasp db migrate-deploy && wasp build"]
+cmds = ["npm install -g wasp-cli@0.13.0 && wasp db migrate-deploy && wasp build"]
 # Or if wasp-cli is in devDependencies:
 # cmds = ["npm install --frozen-lockfile && npm run db:deploy && npm run build:prod"]
 # (Assuming "db:deploy": "wasp db migrate-deploy", "build:prod": "wasp build" in package.json scripts)
