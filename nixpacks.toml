@@ -1,0 +1,17 @@
+# astroinsight/nixpacks.toml
+
+# Specify the providers (languages/tools) to use.
+# This tells Nixpacks to ONLY use Node.js related tools.
+providers = ["node"]
+
+# Define the build command
+[phases.build]
+cmds = ["npm install -g wasp-cli@<your-wasp-version> && wasp db migrate-deploy && wasp build"]
+# Or if wasp-cli is in devDependencies:
+# cmds = ["npm install --frozen-lockfile && npm run db:deploy && npm run build:prod"]
+# (Assuming "db:deploy": "wasp db migrate-deploy", "build:prod": "wasp build" in package.json scripts)
+
+
+# Define the start command
+[start]
+cmd = "node .wasp/build/server/src/main.js"
