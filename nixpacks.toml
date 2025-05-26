@@ -6,11 +6,19 @@ providers = ["node"]
 
 # Define the build command
 [phases.build]
-cmds = ["npm install -g wasp-cli@0.13.0 && wasp db migrate-deploy && wasp build"]
+cmds = ["npx wasp db migrate-deploy", "npx wasp build"]```toml # Uses the 'wasp' installed from package.json
 # Or if wasp-cli is in devDependencies:
 # cmds = ["npm install --frozen-lockfile && npm run db:deploy && npm run build:prod"]
 # (Assuming "db:deploy": "wasp db migrate-deploy", "build:prod": "wasp build" in package.json scripts)
 
+[start]
+    cmd = "node .was
+            # astroinsight/nixpacks.toml
+            providers = ["node"]
+
+            [phases.build]
+            cmds = ["npm install -g wasp-cli@0.14.1 && wasp db migrate-deploy &&p/build/server/src/main.js" ``` wasp build"] # Example: Use 0.14.1 or your target version
+            
 
 # Define the start command
 [start]
