@@ -1,18 +1,16 @@
+toml# nixpacks.toml - Alternative approach
 providers = ["node"]
 
-[variables]
-NODE_VERSION = "18"
-
 [phases.setup]
-cmds = ["npm --version", "node --version"]
+cmds = ["npm install -g @wasp-lang/wasp@latest"]
 
 [phases.install]
-cmds = ["npm ci --only=production"]
+cmds = ["npm install --production=false"]
 
 [phases.build]
 cmds = [
-  "npx wasp db migrate-deploy",
-  "npx wasp build"
+  "wasp db migrate-deploy",
+  "wasp build"
 ]
 
 [start]
