@@ -14,29 +14,4 @@
     "node": ">=18"
   }
 }
-EOF
 
-# Generate lock file
-npm install
-
-# Use this nixpacks.toml
-cat > nixpacks.toml << 'EOF'
-providers = ["node"]
-
-[phases.setup]
-cmds = ["curl -sSL https://get.wasp-lang.dev/installer.sh | sh"]
-
-[phases.build]
-cmds = [
-  "export PATH=$PATH:$HOME/.local/bin",
-  "wasp build"
-]
-
-[start]
-cmd = "cd .wasp/build && npm start"
-EOF
-
-# Commit and push
-git add .
-git commit -m "Fix: Use direct Wasp installation"
-git push
