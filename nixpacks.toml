@@ -1,14 +1,11 @@
 providers = ["node"]
 
 [phases.setup]
-cmds = ["npm install -g @wasp-lang/wasp@latest"]
-
-[phases.install]
-cmds = ["npm install --production=false"]
+cmds = ["curl -sSL https://get.wasp-lang.dev/installer.sh | sh"]
 
 [phases.build]
 cmds = [
-  "wasp db migrate-deploy",
+  "export PATH=$PATH:$HOME/.local/bin",
   "wasp build"
 ]
 
