@@ -1,4 +1,3 @@
-toml# nixpacks.toml - Alternative approach
 providers = ["node"]
 
 [phases.setup]
