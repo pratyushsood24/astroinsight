@@ -1,5 +1,4 @@
-# Create a minimal package.json if Wasp isn't generating one properly
-cat > package.json << 'EOF'
+
 {
   "name": "astroinsight",
   "version": "1.0.0",
