@@ -1,24 +1,20 @@
-# astroinsight/nixpacks.toml
-description = "AstroInsight: Your personalized astrology and horoscopes platform."
-
+toml# Alternative nixpacks.toml
 providers = ["node"]
 
-[env]
+[variables]
 NODE_VERSION = "18"
 
+[phases.setup]
+cmds = ["npm --version", "node --version"]
+
 [phases.install]
-# This will install dependencies listed in package.json, including 'wasp'
-cmds = ["npm ci"]
+cmds = ["npm ci --only=production"]
 
 [phases.build]
-# These commands will use the 'wasp' executable installed as a dependency (via npx)
-# and then run the Wasp build command.
-cmds = ["npx wasp db migrate-deploy", "npx wasp compile"]
+cmds = [
+  "npx wasp db migrate-deploy",
+  "npx wasp build"
+]
 
 [start]
-# This command starts your Wasp production server after the build is complete.
-cmd = "node .wasp/build/server/src/main.js"
-
-[cache]
-  [cache.node_modules]
-    path = "node_modules"
+cmd = "cd .wasp/build && npm start"
