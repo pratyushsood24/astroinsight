@@ -1,25 +1,24 @@
 # astroinsight/nixpacks.toml
+description = "AstroInsight: Your personalized astrology and horoscopes platform."
 
-# Specify the providers (languages/tools) to use.
-# This tells Nixpacks to ONLY use Node.js related tools.
 providers = ["node"]
 
-# Define the build command
+[env]
+NODE_VERSION = "18"
+
+[phases.install]
+# This will install dependencies listed in package.json, including 'wasp'
+cmds = ["npm ci"]
+
 [phases.build]
-cmds = ["npx wasp db migrate-deploy", "npx wasp build"]```toml # Uses the 'wasp' installed from package.json
-# Or if wasp-cli is in devDependencies:
-# cmds = ["npm install --frozen-lockfile && npm run db:deploy && npm run build:prod"]
-# (Assuming "db:deploy": "wasp db migrate-deploy", "build:prod": "wasp build" in package.json scripts)
+# These commands will use the 'wasp' executable installed as a dependency (via npx)
+# and then run the Wasp build command.
+cmds = ["npx wasp db migrate-deploy", "npx wasp compile"]
 
 [start]
-    cmd = "node .was
-            # astroinsight/nixpacks.toml
-            providers = ["node"]
-
-            [phases.build]
-            cmds = ["npm install -g wasp-cli@0.14.1 && wasp db migrate-deploy &&p/build/server/src/main.js" ``` wasp build"] # Example: Use 0.14.1 or your target version
-            
-
-# Define the start command
-[start]
+# This command starts your Wasp production server after the build is complete.
 cmd = "node .wasp/build/server/src/main.js"
+
+[cache]
+  [cache.node_modules]
+    path = "node_modules"
